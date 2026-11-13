@@ -1,16 +1,18 @@
 # Cloud Security Posture Scanner
 
 A CSPM-lite scanner that audits an exported cloud configuration (JSON) for common
-misconfigurations across AWS- and Azure-style resources in a single file. It is a
-portfolio/teaching tool in the spirit of commercial CSPM products (Wiz, Prisma Cloud,
-Microsoft Defender for Cloud), reduced to one dependency-free Python file.
+misconfigurations across AWS- and Azure-style resources in a single file. Think of it
+as a small portfolio and teaching version of what commercial CSPM products (Wiz,
+Prisma Cloud, Microsoft Defender for Cloud) do. It is one Python file, with no
+dependencies.
 
 ## Why this exists
 
-The most damaging cloud incidents rarely involve zero-days — they involve a security
-group open to `0.0.0.0/0` on SSH, a public storage bucket, an unencrypted disk, or an
-admin policy with `*` on `*`. This scanner codifies those checks so a configuration
-export can be reviewed in seconds, with evidence and a remediation for every finding.
+The most damaging cloud incidents rarely involve zero-days. More often it is a
+security group open to `0.0.0.0/0` on SSH, a public storage bucket, an unencrypted
+disk, or an admin policy with `*` on `*`. This scanner turns those checks into code,
+so you can review a configuration export in seconds. Every finding comes with the
+evidence for it and a remediation.
 
 ## Checks implemented (13)
 
@@ -28,7 +30,7 @@ export can be reviewed in seconds, with evidence and a remediation for every fin
 | 10 | Azure Network Watcher disabled | Medium |
 | 11 | Database publicly accessible (RDS / Azure SQL) | Critical |
 | 12 | Snapshot shared publicly | High |
-| 13 | (grouped with #1/#2) IPv6 `::/0` and `*` sources treated as world-open | — |
+| 13 | (grouped with #1/#2) IPv6 `::/0` and `*` sources treated as world-open | n/a |
 
 ## Input format
 
@@ -53,8 +55,8 @@ Supported types include `aws_security_group`, `azure_nsg`, `aws_s3_bucket`,
 `azure_storage_account`, `azure_blob_container`, `aws_ebs_volume`,
 `azure_managed_disk`, `aws_iam_user`, `aws_iam_policy`, `aws_instance`,
 `azure_virtual_machine`, `aws_vpc`, `azure_virtual_network`, `aws_rds_instance`,
-`azure_sql_database`, `aws_ebs_snapshot`, and `azure_snapshot`. The bundled
-`sample-data/cloud-export.json` is a complete worked example of the format.
+`azure_sql_database`, `aws_ebs_snapshot`, and `azure_snapshot`. If you want a full
+worked example of the format, look at the bundled `sample-data/cloud-export.json`.
 
 ## Run it
 
@@ -70,9 +72,9 @@ Against your own export:
 python3 scanner.py --file export.json
 ```
 
-Python 3, standard library only. Findings are printed grouped by severity, each with
-the resource, the check, the evidence taken from the export, and a remediation. The
-report ends with a **posture score**: 100 minus penalties (Critical ×5, High ×3,
+Python 3, standard library only. Findings are printed grouped by severity. Each one
+shows the resource, the check, the evidence taken from the export, and a remediation.
+The report ends with a **posture score**: 100 minus penalties (Critical ×5, High ×3,
 Medium ×1), floored at 0.
 
 ## Demo output (actual run)
@@ -158,26 +160,27 @@ Total findings: 16 (Critical: 4, High: 9, Medium: 3, Low: 0)
 Posture score: 50/100 (100 minus penalties: Critical x5, High x3, Medium x1)
 ```
 
-The sample export contains 19 fictional resources — a deliberate mix of compliant
-resources (which produce no findings) and misconfigured ones.
+The sample export contains 19 fictional resources. It is a deliberate mix: some are
+compliant and produce no findings, others are misconfigured.
 
 ## Design notes and limitations
 
-- **Offline and read-only.** The scanner never calls a cloud API; it audits an export
-  you provide. That makes it safe to run anywhere, but the export format is a
-  simplified model, not the raw AWS/Azure API shape — a small normalisation step
-  would be needed to feed it real account data.
+- **Offline and read-only.** The scanner never calls a cloud API. It audits an export
+  you provide, which makes it safe to run anywhere. The catch is that the export
+  format is a simplified model, not the raw AWS/Azure API shape. You would need a
+  small normalisation step to feed it real account data.
 - **A missing property is not a finding.** Checks fire on explicit values
-  (`encryption_enabled: false`), not on absent fields, to avoid false positives from
-  partial exports. The trade-off is that an incomplete export can hide issues.
-- **Coarse IAM analysis.** The policy check detects the full wildcard case
-  (`"*"` on `"*"`) only; it does not evaluate partial wildcards, conditions, or
-  effective permissions. For deep IAM analysis see the companion
+  (`encryption_enabled: false`), not on absent fields. That avoids false positives
+  from partial exports. The trade-off is real, though: an incomplete export can hide
+  issues.
+- **Coarse IAM analysis.** The policy check only detects the full wildcard case
+  (`"*"` on `"*"`). It does not evaluate partial wildcards, conditions, or effective
+  permissions. For deeper IAM analysis, see the companion
   `cloud-iam-policy-analyzer` project.
-- **The posture score is a triage aid**, not a compliance verdict: it weights finding
+- **The posture score is a triage aid**, not a compliance verdict. It weights finding
   severity only, not asset criticality or exposure duration.
 - Sample data is entirely fictional. No real account data is included or required.
 
 ## License
 
-MIT — see `LICENSE`.
+MIT. See `LICENSE`.
